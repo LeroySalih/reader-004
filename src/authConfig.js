@@ -2,7 +2,8 @@ export const msalConfig = {
     auth: {
       clientId: "ec01aecc-f878-4a74-b606-49cedd47990c",
       authority: "https://login.microsoftonline.com/organizations", // This is a URL (e.g. https://login.microsoftonline.com/{your tenant ID})
-      redirectUri: "https://6d58-95-184-127-138.in.ngrok.io",
+      redirectUri: "https://1213-95-184-127-138.in.ngrok.io/redirect",
+    
     },
     cache: {
       cacheLocation: "sessionStorage", // This configures where your cache will be stored
@@ -19,6 +20,6 @@ export const msalConfig = {
   export const graphConfig = {
       graphMeEndpoint: "https://graph.microsoft.com/v1.0/me",
       graphMyClassesEndpoint: "https://graph.microsoft.com/beta/education/classes",
-      graphClassAssignments: (cId) => `https://graph.microsoft.com/beta/education/classes/${cId}/assignments`
+      graphClassAssignments: (cId) => `https://graph.microsoft.com/beta/education/me/assignments`
 
   };

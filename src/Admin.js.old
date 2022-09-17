@@ -1,0 +1,345 @@
+//
+// https://docs.microsoft.com/en-us/azure/active-directory/develop/tutorial-v2-react#acquire-a-token
+//
+
+// Filter the Classes to only show the Dept Classesefe5r3
+
+import React, { useEffect, useState } from "react";
+import { PageLayout } from "./components/PageLayout";
+import { AuthenticatedTemplate, UnauthenticatedTemplate, useMsal } from "@azure/msal-react";
+import { loginRequest } from "./authConfig";
+import Button from "react-bootstrap/Button";
+
+import { ProfileData } from "./components/ProfileData";
+import { ClassData} from './components/ClassData';
+
+import { callMsGraph } from "./graph";
+import { graphConfig} from './authConfig';
+
+
+import Classes from './data/DeptClasses';
+import supabase from './config/supabaseClient';
+
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link
+} from "react-router-dom";
+
+
+
+const onlyMyClasses = (classData, filterClasses) => {
+  return classData.filter(c => filterClasses.includes(c.displayName))
+}
+
+const fetchClassData = async (instance, account, loginRequest)  => {
+
+  const request = {
+      ...loginRequest,
+      account 
+  };
+
+    
+  // Load Classes Data
+  try{
+    console.log('Getting silent token')
+    const token = await instance.acquireTokenSilent(request);
+    const replyData = await callMsGraph(token.accessToken, graphConfig.graphMyClassesEndpoint);
+    return (onlyMyClasses(replyData, Classes))
+  } 
+  catch(e) {
+    console.log('Getting silent token failed. Getting redirect')
+    const token = await instance.acquireTokenRedirect(request);
+    const replyData = await callMsGraph(token.accessToken, graphConfig.graphMyClassesEndpoint);
+    return (onlyMyClasses(replyData, Classes))
+  }
+
+  /*
+  // Silently acquires an access token which is then attached to a request for Microsoft Graph data
+  instance.acquireTokenSilent(request)
+  .then((response) => {
+      callMsGraph(response.accessToken, graphConfig.graphMyClassesEndpoint)
+      .then((response) => {  setGraphData(onlyMyClasses(response))});
+  })
+  .catch((e) => {
+      instance.acquireTokenPopup(request).then((response) => {
+          callMsGraph(response.accessToken, graphConfig.graphMyClassesEndpoint).then(response => setGraphData(response));
+      });
+  });
+  */
+}
+
+const fetchAssignmentData = async (instance, account, loginRequest, classId)  => {
+
+  const request = {
+      ...loginRequest,
+      account 
+  };
+
+  
+  // Load Classes Data
+  try{
+    const token = await instance.acquireTokenSilent(request);
+    const replyData = await callMsGraph(token.accessToken, graphConfig.graphClassAssignments(classId));
+    console.log("replyData", replyData)
+    
+    return (replyData)
+  } 
+  catch(e) {
+    const token = await instance.acquireTokenRedirect(request);
+    const replyData = await callMsGraph(token.accessToken, graphConfig.graphClassAssignments(classId));
+    return (replyData)
+  }
+
+  /*
+  // Silently acquires an access token which is then attached to a request for Microsoft Graph data
+  instance.acquireTokenSilent(request)
+  .then((response) => {
+      callMsGraph(response.accessToken, graphConfig.graphMyClassesEndpoint)
+      .then((response) => {  setGraphData(onlyMyClasses(response))});
+  })
+  .catch((e) => {
+      instance.acquireTokenPopup(request).then((response) => {
+          callMsGraph(response.accessToken, graphConfig.graphMyClassesEndpoint).then(response => setGraphData(response));
+      });
+  });
+  */
+}
+
+const writeClassesToDb =  async (classesData) => {
+
+  if (classesData === null)
+    return
+
+  console.log("ClassesData", classesData);
+
+  const {data, error} = await supabase  
+    .from("Classes")
+    .insert(classesData)
+
+  console.error(error)
+  console.log(data)
+
+  /*
+  const result = await supabase
+    .from("classes")
+    .insert("")
+  */
+
+}
+
+const writeAssignmentsToDb =  async (assignmentsData) => {
+
+  if (assignmentsData === null)
+    return
+
+  // console.log("AssignmentsData", assignmentsData);
+ 
+  
+  const slicedAssignments = assignmentsData.map((a, i) => ({
+    id: a.id, 
+    classId: a.classId, 
+    displayName: a.displayName, 
+    createdDateTime: a.createdDateTime,
+    dueDateTime : a.dueDateTime,
+    assignedDateTime : a.assignedDateTime, 
+    webUrl: a.webUrl}))
+
+  console.log(slicedAssignments);
+
+  
+  const {data, error} = await supabase  
+    .from("Assignments")
+    .insert(slicedAssignments)
+
+   console.error("Error", error)
+
+  
+
+  
+  /*
+  const result = await supabase
+    .from("classes")
+    .insert("")
+  */
+
+}
+
+const fetchClassesFromDb = async () => {}
+
+
+function App() {
+
+  return (
+    <Router>
+      <div>
+        <nav>
+          <ul>
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li>
+              <Link to="/about">About</Link>
+            </li>
+            <li>
+              <Link to="/users">Users</Link>
+            </li>
+          </ul>
+        </nav>
+
+        
+      </div>
+    </Router>
+  )
+
+}
+
+
+function Home (){
+  return (<div>Home</div>
+}
+
+function Weekly (){
+  return <div>Weekly</div>
+}
+
+
+
+function Admin() {
+
+  const { instance, accounts } = useMsal();
+  const [ classData, setClassData] = useState(null);
+  const [ assignmentsData, setAssignmentsData] = useState(null);
+
+  // const name = accounts[0] && accounts[0].name;
+
+
+  useEffect( () => {
+
+    // Load the initial class Data
+    const getClassData = async () => {
+      const classData = await  fetchClassData(instance, accounts[0], loginRequest)
+      setClassData(classData);
+    }
+
+    getClassData();
+
+
+    const getAssignmentData = async () => {
+      const assignmentData = await fetchAssignmentData(instance, accounts[0], loginRequest)
+      setAssignmentsData(assignmentData)
+    }
+
+    getAssignmentData();
+
+
+    const channel = supabase
+        .channel('db-changes')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'smoothies' },
+          (payload) => {fetchSmoothies()}
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'smoothies' },
+          (payload) => {fetchSmoothies()}
+        )
+        .subscribe()
+
+
+    fetchClassesFromDb();
+
+  }, []);
+
+
+  useEffect( () => {
+    writeClassesToDb(classData)
+    /*
+
+    if (classData === null)
+      return
+
+    const getAssignmentData = async () => {
+      const classId = "8f1dc547-8f7e-4a3c-b592-601456238ea9"
+      
+      const assignmentData = await fetchAssignmentData(instance, accounts[0], loginRequest, classId);
+      
+      setAssignmentData(assignmentData)
+    }   
+    
+    getAssignmentData()
+    
+    */
+
+  }, [classData])
+
+  useEffect( ()=> {
+
+    writeAssignmentsToDb(assignmentsData)
+
+  }, [assignmentsData])
+
+
+  return (
+      <PageLayout>
+          <AuthenticatedTemplate>
+              <ProfileContent />
+              {classData && <ClassContent classData={classData} assignmentData={assignmentsData}/>}
+            </AuthenticatedTemplate>
+            <UnauthenticatedTemplate>
+                <p>You are not signed in! Please sign in.</p>
+            </UnauthenticatedTemplate>
+      </PageLayout>
+  );
+}
+
+
+function ProfileContent() {
+  const { instance, accounts } = useMsal();
+  const [graphData, setGraphData] = useState(null);
+
+  const name = accounts[0] && accounts[0].name;
+
+  function RequestProfileData() {
+      const request = {
+          ...loginRequest,
+          account: accounts[0]
+      };
+
+      // Silently acquires an access token which is then attached to a request for Microsoft Graph data
+      instance.acquireTokenSilent(request).then((response) => {
+          callMsGraph(response.accessToken).then(response => setGraphData(response));
+      }).catch((e) => {
+          instance.acquireTokenPopup(request).then((response) => {
+              callMsGraph(response.accessToken).then(response => setGraphData(response));
+          });
+      });
+  }
+
+  return (
+      <>
+          <h5 className="card-title">Welcome {name}</h5>
+          {graphData ? 
+              <ProfileData graphData={graphData} />
+              :
+              <Button variant="secondary" onClick={RequestProfileData}>Request Profile Information</Button>
+          }
+      </>
+  );
+};
+
+function ClassContent({classData, assignmentData}){
+  
+  return (
+      <>
+          <h5 className="card-title">Class Data</h5>
+          <ClassData classData={classData} assignmentData={assignmentData}/>
+      </>
+  );
+}
+
+
+
+export default App;

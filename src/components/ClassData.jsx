@@ -5,8 +5,7 @@ import React, {useState, useEffect} from "react";
  */
 export const ClassData = ({classData, assignmentData, newProps}) => {
     
-
-
+    
     const getAssignmentsForClass = (assignments, cId) => {
 
         if (!assignments)
