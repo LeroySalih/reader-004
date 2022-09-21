@@ -14,10 +14,18 @@ import Admin from './pages/Admin'
 import Redirect from './pages/Redirect'
 import Weeklies from "./pages/Weeklies";
 
+import styled from "styled-components";
 
 import AppBar from './components/app-bar';
 import { SignInButton } from './components/SignInButton';
 import { SignOutButton } from "./components/SignOutButton";
+
+const Layout = styled.div`
+  max-width : 80vw;
+  margin-left : auto;
+  margin-right: auto;
+`
+
 
 export default () => {
     return  <Router>
@@ -27,7 +35,7 @@ export default () => {
         <AuthenticatedTemplate>
           <AppBar/>
           
-          <SignOutButton/>
+            <SignOutButton/>
           </AuthenticatedTemplate>
           <UnauthenticatedTemplate>
           <ul>
@@ -42,14 +50,14 @@ export default () => {
           
           
         </nav>
-
-        <Routes>
-            <Route exact path="/" element={<Home/>} />
-            <Route exact path="/admin" element={<Admin/>} />
-            <Route exact path="/weeklies" element={<Weeklies/>} />
-            <Route exact path="/redirect" element={<Redirect/>} />
-        </Routes>
-
+        <Layout>
+          <Routes>
+              <Route exact path="/" element={<Home/>} />
+              <Route exact path="/admin" element={<Admin/>} />
+              <Route exact path="/weeklies" element={<Weeklies/>} />
+              <Route exact path="/redirect" element={<Redirect/>} />
+          </Routes>
+        </Layout>
         
       </div>
     </Router>
