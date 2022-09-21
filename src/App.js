@@ -14,6 +14,8 @@ import Admin from './pages/Admin'
 import Redirect from './pages/Redirect'
 import Weeklies from "./pages/Weeklies";
 
+
+import AppBar from './components/app-bar';
 import { SignInButton } from './components/SignInButton';
 import { SignOutButton } from "./components/SignOutButton";
 
@@ -23,20 +25,8 @@ export default () => {
       <div>
         <nav>
         <AuthenticatedTemplate>
-          <ul>
-            <li>
-              <Link to="/">Home</Link>
-            </li>
-            <li>
-              <Link to="/admin">Admin</Link>
-            </li>
-            <li>
-              <Link to="/weeklies">Weeklies</Link>
-            </li>
-            <li>
-              <Link to="/redirect">Redirect</Link>
-            </li>
-          </ul>
+          <AppBar/>
+          
           <SignOutButton/>
           </AuthenticatedTemplate>
           <UnauthenticatedTemplate>
